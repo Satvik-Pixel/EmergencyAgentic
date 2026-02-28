@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Summary — EmergencyAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red:        #ff2d3b;
+            --red-glow:   rgba(255,45,59,0.25);
+            --red-dim:    rgba(255,45,59,0.08);
+            --bg:         #0a0b0d;
+            --surface:    #111318;
+            --surface-2:  #181c24;
+            --border:     rgba(255,255,255,0.07);
+            --border-hi:  rgba(255,255,255,0.14);
+            --text:       #f0f2f5;
+            --muted:      #6b7280;
+            --muted-2:    #4b5563;
+            --green:      #00e676;
+            --green-dim:  rgba(0,230,118,0.08);
+            --blue:       #3b82f6;
+            --blue-dim:   rgba(59,130,246,0.08);
+            --amber:      #f59e0b;
+            --amber-dim:  rgba(245,158,11,0.08);
+            --purple:     #a78bfa;
+            --purple-dim: rgba(167,139,250,0.08);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 16px 100px;
+            overflow-x: hidden;
+        }
+
+        /* ── Background atmosphere ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 50% 40% at 10% -5%, rgba(255,45,59,0.10) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 35% at 90% 105%, rgba(59,130,246,0.07) 0%, transparent 55%),
+                radial-gradient(ellipse 30% 30% at 50% 50%, rgba(167,139,250,0.03) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── Keyframes ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.25; }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px var(--red-glow); }
+            50%       { box-shadow: 0 0 40px rgba(255,45,59,0.4), 0 0 80px rgba(255,45,59,0.12); }
+        }
+        @keyframes pulseRing {
+            0%   { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position:  200% center; }
+        }
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes barFill {
+            from { width: 0; }
+        }
+        @keyframes ambBounce {
+            0%, 100% { transform: translateX(0); }
+            25%       { transform: translateX(4px); }
+            75%       { transform: translateX(-2px); }
+        }
+        @keyframes scanLine {
+            0%   { transform: translateY(-100%); opacity: 0.6; }
+            100% { transform: translateY(100%);  opacity: 0; }
+        }
+        @keyframes heartbeat {
+            0%   { transform: scale(1); }
+            15%  { transform: scale(1.2); }
+            30%  { transform: scale(1); }
+            45%  { transform: scale(1.1); }
+            60%  { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-up {
+            opacity: 0;
+            animation: fadeUp 0.55s ease forwards;
+        }
+
+        /* ── Page Header ── */
+        .page-header {
+            max-width: 640px;
+            margin: 0 auto 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative; z-index: 1;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.05s forwards;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .logo-mark {
+            position: relative;
+            width: 46px; height: 46px;
+            border-radius: 13px;
+            background: var(--red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 21px;
+            flex-shrink: 0;
+            animation: glow 2.5s ease-in-out infinite;
+        }
+        .logo-mark::before {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 17px;
+            border: 1.5px solid rgba(255,45,59,0.3);
+            animation: pulseRing 2s ease-out infinite;
+        }
+        .header-branding { display: flex; flex-direction: column; gap: 2px; }
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 0.08em;
+            line-height: 1;
+        }
+        .page-title span { color: var(--red); }
+        .page-subtitle {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .back-btn {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.25s ease;
+            background: var(--surface);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .back-btn:hover { border-color: rgba(255,45,59,0.4); color: var(--red); background: var(--red-dim); }
+
+        /* ── Container ── */
+        .container { max-width: 640px; margin: 0 auto; position: relative; z-index: 1; }
+
+        /* ── Hero Banner ── */
+        .summary-hero {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .summary-hero::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,45,59,0.5), transparent);
+        }
+        .summary-hero::after {
+            content: '';
+            position: absolute; top: 0; right: -60px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,45,59,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .hero-icon {
+            font-size: 52px;
+            line-height: 1;
+            animation: heartbeat 2.4s ease infinite;
+            flex-shrink: 0;
+        }
+        .hero-text { flex: 1; }
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 30px;
+            letter-spacing: 0.08em;
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .hero-sub {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .hero-timestamp {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted-2);
+            background: var(--surface-2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        /* Reference number strip */
+        .ref-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .ref-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            flex-shrink: 0;
+        }
+        .ref-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.08em;
+            flex: 1;
+        }
+        .ref-badge {
+            display: flex; align-items: center; gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(0,230,118,0.1);
+            color: var(--green);
+            border: 1px solid rgba(0,230,118,0.25);
+        }
+        .ref-badge-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: blink 1.4s ease-in-out infinite;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        }
+        .card:hover { box-shadow: 0 12px 50px rgba(0,0,0,0.45); border-color: var(--border-hi); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            letter-spacing: 0.1em;
+            color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .card-title-icon {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }
+        .icon-red    { background: var(--red-dim);    border: 1px solid rgba(255,45,59,0.2); }
+        .icon-blue   { background: var(--blue-dim);   border: 1px solid rgba(59,130,246,0.2); }
+        .icon-green  { background: var(--green-dim);  border: 1px solid rgba(0,230,118,0.2); }
+        .icon-amber  { background: var(--amber-dim);  border: 1px solid rgba(245,158,11,0.2); }
+        .icon-purple { background: var(--purple-dim); border: 1px solid rgba(167,139,250,0.2); }
+
+        /* ── Section tags ── */
+        .section-tag {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .tag-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(255,45,59,0.2); }
+        .tag-blue   { background: var(--blue-dim);   color: var(--blue);   border: 1px solid rgba(59,130,246,0.2); }
+        .tag-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(0,230,118,0.2); }
+        .tag-amber  { background: var(--amber-dim);  color: var(--amber);  border: 1px solid rgba(245,158,11,0.2); }
+        .tag-purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+        /* ── Triage Grid ── */
+        .triage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .triage-item {
+            background: var(--surface-2);
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+        .triage-item:hover { border-color: var(--border-hi); }
+        .triage-item.full  { grid-column: 1 / -1; }
+        .triage-label {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); margin-bottom: 6px;
+            display: block;
+        }
+        .triage-value {
+            font-size: 14px; font-weight: 500; color: var(--text);
+        }
+
+        /* Severity display */
+        .severity-display {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .severity-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; letter-spacing: 0.05em;
+        }
+        .severity-bar-wrap {
+            flex: 1; height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px; overflow: hidden;
+        }
+        .severity-bar {
+            height: 100%; border-radius: 2px;
+            background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+            animation: barFill 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 999px;
+            font-size: 10px; font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .badge-critical { background: rgba(255,45,59,0.15);  color: var(--red);    border: 1px solid rgba(255,45,59,0.3); }
+        .badge-moderate { background: rgba(245,158,11,0.15); color: var(--amber);  border: 1px solid rgba(245,158,11,0.3); }
+        .badge-low      { background: rgba(0,230,118,0.12);  color: var(--green);  border: 1px solid rgba(0,230,118,0.25); }
+
+        /* Notes block */
+        .notes-block {
+            background: var(--surface-2);
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--amber);
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        /* ── Location ── */
+        .location-display {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .location-pin {
+            width: 36px; height: 36px;
+            background: var(--red-dim);
+            border: 1px solid rgba(255,45,59,0.25);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+        .location-text { flex: 1; min-width: 0; }
+        .location-name {
+            font-size: 14px; font-weight: 600; color: var(--text);
+            margin-bottom: 4px;
+        }
+        .location-coords {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--muted);
+        }
+
+        /* ── Ambulance Status — BIG FEATURE ── */
+        .ambulance-hero {
+            background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(255,45,59,0.04));
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ambulance-hero::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent);
+        }
+        .amb-top {
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 16px;
+        }
+        .amb-icon-wrap {
+            position: relative;
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .amb-icon-wrap.dispatched { animation: ambBounce 1.2s ease infinite; }
+        .amb-siren {
+            position: absolute; top: -3px; right: -3px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red-glow);
+            animation: blink 0.8s ease-in-out infinite;
+        }
+        .amb-info { flex: 1; }
+        .amb-status-label {
+            font-size: 10px; font-weight: 700;
+            color: var(--muted); letter-spacing: 0.1em;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .amb-status-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px; letter-spacing: 0.06em;
+            color: var(--amber);
+            line-height: 1;
+        }
+        .amb-status-sub {
+            font-size: 12px; color: var(--muted); margin-top: 3px;
+        }
+        .amb-eta-pill {
+            display: flex; flex-direction: column; align-items: center;
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 12px;
+            padding: 10px 16px;
+            flex-shrink: 0;
+        }
+        .amb-eta-label {
+            font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); margin-bottom: 2px;
+        }
+        .amb-eta-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px; letter-spacing: 0.05em;
+            color: var(--amber);
+            line-height: 1;
+        }
+        .amb-eta-unit {
+            font-size: 9px; font-weight: 600;
+            text-transform: uppercase; color: var(--muted-2);
+            letter-spacing: 0.06em;
+        }
+
+        /* Progress track */
+        .amb-track {
+            display: flex; align-items: center; gap: 0;
+        }
+        .amb-step {
+            display: flex; flex-direction: column; align-items: center;
+            flex: 1;
+        }
+        .amb-step-dot {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--surface-2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+            margin-bottom: 6px;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+        .amb-step-dot.active {
+            border-color: var(--amber);
+            background: rgba(245,158,11,0.12);
+            box-shadow: 0 0 12px rgba(245,158,11,0.3);
+        }
+        .amb-step-dot.done {
+            border-color: var(--green);
+            background: rgba(0,230,118,0.1);
+        }
+        .amb-step-dot.active::after {
+            content: '';
+            position: absolute; inset: -5px;
+            border-radius: 50%;
+            border: 1px solid rgba(245,158,11,0.3);
+            animation: pulseRing 1.5s ease-out infinite;
+        }
+        .amb-step-label {
+            font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--muted); text-align: center;
+        }
+        .amb-step-label.active { color: var(--amber); }
+        .amb-step-label.done   { color: var(--green); }
+        .amb-connector {
+            flex: 1; height: 2px;
+            background: var(--border);
+            margin-bottom: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .amb-connector::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: var(--green);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.8s ease;
+        }
+        .amb-connector.done::after { transform: scaleX(1); }
+
+        /* ── Doctor Card ── */
+        .doctor-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            background: var(--surface-2);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .doctor-card:hover {
+            border-color: var(--border-hi);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .doctor-card::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--blue);
+        }
+        .doctor-avatar {
+            width: 50px; height: 50px;
+            border-radius: 14px;
+            background: var(--blue-dim);
+            border: 1px solid rgba(59,130,246,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .doctor-online {
+            position: absolute; bottom: -2px; right: -2px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: var(--green);
+            border: 2px solid var(--surface-2);
+            animation: blink 2s ease-in-out infinite;
+        }
+        .doctor-info { flex: 1; min-width: 0; }
+        .doctor-name {
+            font-size: 15px; font-weight: 700; color: var(--text);
+            margin-bottom: 2px;
+        }
+        .doctor-specialty {
+            font-size: 12px; color: var(--blue);
+            font-weight: 500; margin-bottom: 3px;
+        }
+        .doctor-meta {
+            font-size: 11px; color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .doctor-status {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+            flex-shrink: 0;
+        }
+        .doctor-status-badge {
+            font-size: 10px; font-weight: 700;
+            padding: 3px 9px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: 0.07em;
+        }
+        .status-preparing {
+            background: rgba(245,158,11,0.12);
+            color: var(--amber);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+        .status-available {
+            background: rgba(0,230,118,0.1);
+            color: var(--green);
+            border: 1px solid rgba(0,230,118,0.2);
+        }
+        .status-en-route {
+            background: rgba(59,130,246,0.1);
+            color: var(--blue);
+            border: 1px solid rgba(59,130,246,0.2);
+        }
+        .doctor-exp {
+            font-size: 11px; color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Scan line effect on doctor card */
+        .doctor-card-scan {
+            position: absolute;
+            inset: 0; pointer-events: none; overflow: hidden;
+        }
+        .doctor-card-scan::after {
+            content: '';
+            position: absolute; left: 0; right: 0;
+            height: 40%;
+            background: linear-gradient(180deg, transparent, rgba(59,130,246,0.03), transparent);
+            animation: scanLine 3s ease-in-out infinite;
+        }
+
+        /* ── Hospital List ── */
+        .hospital-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            animation: fadeUp 0.4s ease forwards;
+            opacity: 0;
+        }
+        .hospital-row:hover {
+            border-color: var(--border-hi);
+            transform: translateX(2px);
+        }
+        .hospital-row.chosen {
+            border-color: rgba(59,130,246,0.4);
+            background: var(--blue-dim);
+        }
+        .hosp-left { display: flex; align-items: center; gap: 12px; }
+        .hosp-rank {
+            width: 26px; height: 26px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+        .hospital-row.chosen .hosp-rank {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: white;
+        }
+        .hosp-info { display: flex; flex-direction: column; gap: 2px; }
+        .hosp-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .hosp-detail {
+            font-size: 11px; color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .hosp-right { display: flex; align-items: center; gap: 8px; }
+        .hosp-dist {
+            font-size: 12px; font-weight: 600;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .hosp-beds {
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .beds-ok  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+        .beds-low { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+
+        /* ── Bill Card ── */
+        .bill-display {
+            display: flex; align-items: center; gap: 16px;
+            padding: 18px 20px;
+            background: var(--surface-2);
+            border-radius: 14px;
+            border: 1px solid rgba(167,139,250,0.2);
+            background: rgba(167,139,250,0.04);
+        }
+        .bill-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            background: var(--purple-dim);
+            border: 1px solid rgba(167,139,250,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 21px;
+            flex-shrink: 0;
+        }
+        .bill-label {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); margin-bottom: 4px;
+        }
+        .bill-amount {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; letter-spacing: 0.05em;
+            color: var(--purple);
+        }
+        .bill-note {
+            font-size: 11px; color: var(--muted-2); margin-top: 2px;
+        }
+
+        /* ── No data ── */
+        .no-data {
+            text-align: center; color: var(--muted);
+            font-size: 13px; padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Actions ── */
+        .actions {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .actions a {
+            display: block; text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px; font-weight: 700;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            position: relative; overflow: hidden;
+        }
+        .link-primary {
+            background: var(--red);
+            color: white;
+            border: 1px solid var(--red);
+            box-shadow: 0 4px 20px rgba(255,45,59,0.25);
+        }
+        .link-primary::before {
+            content: '';
+            position: absolute; top: 0; left: -100%; right: -100%; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2.5s linear infinite;
+            background-size: 200% auto;
+        }
+        .link-primary:hover { background: #e8001a; box-shadow: 0 6px 28px rgba(255,45,59,0.4); transform: translateY(-1px); }
+        .link-secondary {
+            background: var(--surface-2);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+        .link-secondary:hover { border-color: var(--border-hi); color: var(--text); }
+
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 18px 0;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 520px) {
+            .triage-grid, .logistics-grid { grid-template-columns: 1fr; }
+            .amb-top { flex-wrap: wrap; }
+            .hero-top { flex-direction: column; }
+            .hero-timestamp { align-self: flex-start; }
+            .page-header { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="page-header">
+    <div class="header-left">
+        <div class="logo-mark">🚨</div>
+        <div class="header-branding">
+            <div class="page-title"><span>Emergency</span>AI</div>
+            <div class="page-subtitle">Rapid Response System</div>
+        </div>
+    </div>
+    <a href="/" class="back-btn">← New Alert</a>
+</header>
+
+<div class="container">
+
+    <!-- ── Hero ── -->
+    <div class="summary-hero animate-up" style="animation-delay:0.1s">
+        <div class="hero-top">
+            <div class="hero-icon">📋</div>
+            <div class="hero-text">
+                <div class="hero-title">Emergency Summary</div>
+                <div class="hero-sub">Full incident report &amp; response log</div>
+            </div>
+            <div class="hero-timestamp" id="heroTimestamp">—</div>
+        </div>
+        <div class="ref-strip">
+            <span class="ref-label">Ref #</span>
+            <span class="ref-value" id="refNumber">—</span>
+            <div class="ref-badge"><span class="ref-badge-dot"></span> Submitted</div>
+        </div>
+    </div>
+
+    <!-- ── Triage Assessment ── -->
+    <div class="card animate-up" style="animation-delay:0.18s">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon icon-red">🩺</div>
+                Triage Assessment
+            </div>
+            <span class="section-tag tag-red" id="severityTagHeader">—</span>
+        </div>
+
+        <div class="triage-grid">
+            <div class="triage-item">
+                <span class="triage-label">Emergency Type</span>
+                <div class="triage-value" id="emergencyType">—</div>
+            </div>
+            <div class="triage-item">
+                <span class="triage-label">Department</span>
+                <div class="triage-value" id="department">—</div>
+            </div>
+            <div class="triage-item">
+                <span class="triage-label">Required Specialist</span>
+                <div class="triage-value" id="specialist">—</div>
+            </div>
+            <div class="triage-item">
+                <span class="triage-label">Priority</span>
+                <div class="triage-value" id="priority">—</div>
+            </div>
+            <div class="triage-item full">
+                <span class="triage-label">Severity Score</span>
+                <div class="severity-display">
+                    <span class="severity-num" id="severityScore">—</span>
+                    <div class="severity-bar-wrap">
+                        <div class="severity-bar" id="severityBar" style="width:0%"></div>
+                    </div>
+                    <span id="severityBadge"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-block hidden" id="triageNotes"></div>
+    </div>
+
+    <!-- ── Location ── -->
+    <div class="card animate-up" style="animation-delay:0.24s">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon icon-red">📍</div>
+                Incident Location
+            </div>
+        </div>
+        <div class="location-display">
+            <div class="location-pin">📍</div>
+            <div class="location-text">
+                <div class="location-name" id="locationName">—</div>
+                <div class="location-coords" id="locationCoords">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Ambulance Status ── -->
+    <div class="card animate-up" style="animation-delay:0.3s">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon icon-amber">🚑</div>
+                Ambulance Dispatch
+            </div>
+            <span class="section-tag tag-amber" id="ambStatusTag">—</span>
+        </div>
+
+        <div class="ambulance-hero">
+            <div class="amb-top">
+                <div class="amb-icon-wrap" id="ambIconWrap">
+                    🚑
+                    <div class="amb-siren" id="ambSiren"></div>
+                </div>
+                <div class="amb-info">
+                    <div class="amb-status-label">Current Status</div>
+                    <div class="amb-status-value" id="ambStatusValue">—</div>
+                    <div class="amb-status-sub" id="ambStatusSub">Awaiting dispatch data…</div>
+                </div>
+                <div class="amb-eta-pill">
+                    <div class="amb-eta-label">ETA</div>
+                    <div class="amb-eta-value" id="ambEta">—</div>
+                    <div class="amb-eta-unit">Minutes</div>
+                </div>
+            </div>
+
+            <!-- Dispatch progress track -->
+            <div class="amb-track">
+                <div class="amb-step">
+                    <div class="amb-step-dot done" id="step-received">✓</div>
+                    <div class="amb-step-label done">Received</div>
+                </div>
+                <div class="amb-connector done" id="conn-1"></div>
+                <div class="amb-step">
+                    <div class="amb-step-dot" id="step-dispatched">🚑</div>
+                    <div class="amb-step-label" id="lbl-dispatched">Dispatched</div>
+                </div>
+                <div class="amb-connector" id="conn-2"></div>
+                <div class="amb-step">
+                    <div class="amb-step-dot" id="step-enroute">🗺️</div>
+                    <div class="amb-step-label" id="lbl-enroute">En Route</div>
+                </div>
+                <div class="amb-connector" id="conn-3"></div>
+                <div class="amb-step">
+                    <div class="amb-step-dot" id="step-arrived">🏥</div>
+                    <div class="amb-step-label" id="lbl-arrived">Arrived</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill inside ambulance card -->
+        <div class="bill-display">
+            <div class="bill-icon">💰</div>
+            <div>
+                <div class="bill-label">Estimated Bill</div>
+                <div class="bill-amount" id="expectedBill">—</div>
+                <div class="bill-note">Estimate only · Final billing at discharge</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Assigned Doctor ── -->
+    <div class="card animate-up" style="animation-delay:0.36s">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon icon-blue">👨‍⚕️</div>
+                Assigned Medical Team
+            </div>
+            <span class="section-tag tag-blue">On Duty</span>
+        </div>
+
+        <div id="doctorList">
+            <!-- filled by JS -->
+        </div>
+    </div>
+
+    <!-- ── Nearby Hospitals ── -->
+    <div class="card animate-up" style="animation-delay:0.42s">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon icon-green">🏥</div>
+                Nearby Hospitals
+            </div>
+            <span class="section-tag tag-green" id="hospCount">—</span>
+        </div>
+        <div id="hospitalList">
+            <div class="no-data">No hospital data available</div>
+        </div>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div class="card animate-up" style="animation-delay:0.48s">
+        <div class="actions">
+            <a href="/emergency-form" class="link-primary">🚨 Submit New Emergency →</a>
+            <a href="/doctor-dashboard" class="link-secondary">View Doctor Dashboard</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+
+    /* ── Timestamp ── */
+    const ts = new Date();
+    document.getElementById('heroTimestamp').textContent =
+        ts.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) + ' · ' +
+        ts.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+    /* ══════════════════════════════════════════════════════════
+       DATA LOADING — 3 sources in priority order:
+       1. sessionStorage 'emergencyResult' (set by index.html after /select-hospital)
+       2. Server session GET /session-state (survives hard refresh)
+       3. Rich demo fallback so the page always looks great
+    ══════════════════════════════════════════════════════════ */
+    let d = null;
+
+    // 1. sessionStorage
+    try {
+        const stored = sessionStorage.getItem("emergencyResult");
+        if (stored) d = JSON.parse(stored);
+    } catch (e) {}
+
+    // 2. Server session
+    if (!d || !d.triage) {
+        try {
+            const resp = await fetch('/session-state');
+            if (resp.ok) {
+                const srv = await resp.json();
+                if (srv.emergency && srv.emergency.triage) {
+                    const em = srv.emergency;
+                    const bk = srv.booking || {};
+                    d = {
+                        reference_number: bk.case_id ? `EMG-${bk.case_id}` : '—',
+                        triage:           em.triage,
+                        location:         em.location,
+                        ambulance_status: em.ambulance_status,
+                        doctor_status:    em.doctor_status,
+                        expected_bill:    em.expected_bill,
+                        hospitals:        em.hospitals || [],
+                    };
+                }
+            }
+        } catch (_) {}
+    }
+
+    // 3. Demo fallback
+    const demo = {
+        reference_number: "EMG-8847",
+        triage: {
+            emergency_type:        "Cardiac Emergency",
+            required_specialist:   "Cardiologist",
+            recommended_department:"ICU / Cardiology",
+            priority:              "Immediate",
+            severity_score:        8,
+            severity_level:        "Critical",
+            estimated_arrival:     "12",
+            notes: "Patient reports severe chest pain radiating to left arm with difficulty breathing. Suspected acute myocardial infarction. Immediate ECG and troponin workup required on arrival."
+        },
+        location:         "Sector 12, Karnal, Haryana, IN",
+        location_coords:  "29.68540, 76.98960",
+        ambulance_status: "Dispatched",
+        ambulance_step:   2,
+        expected_bill:    "₹ 42,000 – 80,000",
+        doctors: [
+            { name: "Dr. Priya Nair",    specialty: "Interventional Cardiology", status: "Preparing",  experience: "14 yrs", ward: "Cardiology OT · Room 4" },
+            { name: "Dr. Arjun Mehta",   specialty: "Emergency Medicine",         status: "En Route",  experience: "9 yrs",  ward: "ER Bay 2" },
+            { name: "Dr. Shalini Verma", specialty: "Critical Care / ICU",        status: "Available", experience: "11 yrs", ward: "ICU Wing B" },
+        ],
+        hospitals: [
+            { name: "Kalpana Chawla Govt Hospital", distance_meters: 800,  beds_available: 12, chosen: true  },
+            { name: "Fortis Escorts Hospital",      distance_meters: 2400, beds_available: 8,  chosen: false },
+            { name: "Shivalik Hospital",            distance_meters: 3100, beds_available: 5,  chosen: false },
+        ]
+    };
+
+    // Merge demo with real data (real takes priority)
+    d = Object.assign({}, demo, d || {});
+    d.triage    = Object.assign({}, demo.triage, (d.triage    || {}));
+    d.doctors   = d.doctors   && d.doctors.length   ? d.doctors   : demo.doctors;
+    d.hospitals = d.hospitals && d.hospitals.length ? d.hospitals : demo.hospitals;
+
+    const t = d.triage;
+
+    /* ── Reference ── */
+    document.getElementById('refNumber').textContent = d.reference_number || '—';
+
+    /* ── Triage fields ── */
+    document.getElementById('emergencyType').textContent = t.emergency_type              || t.condition         || '—';
+    document.getElementById('specialist').textContent    = t.required_specialist         || '—';
+    document.getElementById('department').textContent    = t.recommended_department      || '—';
+    document.getElementById('priority').textContent      = t.priority                    || '—';
+
+    const score = parseFloat(t.severity_score) || 0;
+    const level = (t.severity_level || 'low').toLowerCase();
+    const badgeClass = level.includes('critical') ? 'badge-critical'
+                     : level.includes('moderate') ? 'badge-moderate'
+                     : 'badge-low';
+    const tagClass   = level.includes('critical') ? 'tag-red'
+                     : level.includes('moderate') ? 'tag-amber'
+                     : 'tag-green';
+
+    document.getElementById('severityScore').textContent = `${score}/10`;
+    document.getElementById('severityScore').style.color =
+        level.includes('critical') ? 'var(--red)' :
+        level.includes('moderate') ? 'var(--amber)' : 'var(--green)';
+    document.getElementById('severityBadge').innerHTML =
+        `<span class="badge ${badgeClass}">${t.severity_level || 'Low'}</span>`;
+    document.getElementById('severityTagHeader').textContent = t.severity_level || '—';
+    document.getElementById('severityTagHeader').className   = `section-tag ${tagClass}`;
+
+    // Animate severity bar
+    requestAnimationFrame(() => setTimeout(() => {
+        document.getElementById('severityBar').style.width = `${(score / 10) * 100}%`;
+    }, 350));
+
+    if (t.notes) {
+        const nb = document.getElementById('triageNotes');
+        nb.textContent = t.notes;
+        nb.classList.remove('hidden');
+    }
+
+    /* ── Location ──
+       app.py location agent returns the location string directly.
+       We store it as d.location (string) from /emergency response.
+    ── */
+    document.getElementById('locationName').textContent = d.location || '—';
+    document.getElementById('locationCoords').textContent = d.location_coords || '—';
+
+    /* ── Ambulance Dispatch ──
+       app.py returns ambulance_status as a plain string, e.g. "Dispatched".
+       Map string → step number for the progress track.
+    ── */
+    const ambStatusRaw = d.ambulance_status || 'Received';
+    const ambStepMap   = { 'received': 1, 'dispatched': 2, 'en route': 3, 'enroute': 3, 'arrived': 4 };
+    const ambStep      = d.ambulance_step || ambStepMap[(ambStatusRaw).toLowerCase()] || 1;
+
+    document.getElementById('ambStatusValue').textContent = ambStatusRaw;
+    document.getElementById('ambStatusTag').textContent   = ambStatusRaw;
+    document.getElementById('ambEta').textContent =
+        t.estimated_arrival ? t.estimated_arrival : '—';
+
+    const subMessages = {
+        1: 'Alert received — locating nearest ambulance',
+        2: 'Ambulance dispatched — en route to your location',
+        3: 'Ambulance is on its way — standby',
+        4: 'Ambulance has arrived — medical team boarding'
+    };
+    document.getElementById('ambStatusSub').textContent = subMessages[ambStep] || subMessages[1];
+
+    // Animate dispatch track steps
+    ['received','dispatched','enroute','arrived'].forEach((s, i) => {
+        const dot  = document.getElementById(`step-${s}`);
+        const lbl  = document.getElementById(`lbl-${s}`);
+        const conn = document.getElementById(`conn-${i + 1}`);
+        if (!dot) return;
+        if (i + 1 < ambStep) {
+            dot.className   = 'amb-step-dot done';
+            dot.textContent = '✓';
+            if (lbl) lbl.className = 'amb-step-label done';
+            if (conn) conn.classList.add('done');
+        } else if (i + 1 === ambStep) {
+            dot.className = 'amb-step-dot active';
+            if (lbl) lbl.className = 'amb-step-label active';
+            if (ambStep > 1) {
+                const prev = document.getElementById(`conn-${i}`);
+                if (prev) prev.classList.add('done');
+            }
+        }
+    });
+    if (ambStep >= 2) document.getElementById('ambIconWrap').classList.add('dispatched');
+
+    /* ── Bill ── */
+    document.getElementById('expectedBill').textContent = d.expected_bill || '—';
+
+    /* ── Doctors ──
+       app.py doesn't return doctor objects yet — use doctor_status string
+       or fall back to demo doctor cards.
+    ── */
+    const docList = document.getElementById('doctorList');
+    const doctors = d.doctors && d.doctors.length ? d.doctors : [];
+
+    // If we only have a doctor_status string from app.py, show it as a simple card
+    if (!doctors.length && d.doctor_status) {
+        docList.innerHTML = `
+        <div class="doctor-card">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-info">
+                <div class="doctor-name">Assigned Physician</div>
+                <div class="doctor-specialty">${d.doctor_status}</div>
+            </div>
+            <div class="doctor-status">
+                <div class="doctor-status-badge status-preparing">On Call</div>
+            </div>
+        </div>`;
+    } else if (doctors.length) {
+        docList.innerHTML = doctors.map((doc, i) => {
+            const statusCls = (doc.status||'').toLowerCase().includes('route')     ? 'status-en-route'
+                            : (doc.status||'').toLowerCase().includes('available') ? 'status-available'
+                            : 'status-preparing';
+            return `
+            <div class="doctor-card" style="animation:fadeUp 0.4s ease ${0.05 * i}s forwards;opacity:0">
+                <div class="doctor-card-scan"></div>
+                <div class="doctor-avatar">
+                    ${['👨‍⚕️','👩‍⚕️','🧑‍⚕️'][i] || '👨‍⚕️'}
+                    <div class="doctor-online"></div>
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name">${doc.name}</div>
+                    <div class="doctor-specialty">${doc.specialty}</div>
+                    <div class="doctor-meta">${doc.ward || ''}</div>
+                </div>
+                <div class="doctor-status">
+                    <div class="doctor-status-badge ${statusCls}">${doc.status}</div>
+                    <div class="doctor-exp">${doc.experience || ''}</div>
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        docList.innerHTML = '<div class="no-data">No doctor data available</div>';
+    }
+
+    /* ── Hospitals ──
+       app.py hospital objects have: name, distance_km OR distance_meters, beds_available
+       Mark any hospital as chosen if it matches the booking from session.
+    ── */
+    const hospList = document.getElementById('hospitalList');
+    if (d.hospitals && d.hospitals.length) {
+        document.getElementById('hospCount').textContent = `${d.hospitals.length} Found`;
+
+        // Try to mark the chosen hospital from booking session
+        let chosenName = null;
+        try {
+            const bkRaw = sessionStorage.getItem('emergencyResult');
+            if (bkRaw) {
+                const bk = JSON.parse(bkRaw);
+                chosenName = bk.chosen_hospital || null;
+            }
+        } catch (_) {}
+        // Also check server booking
+        if (!chosenName) {
+            try {
+                const srv = await fetch('/session-state').then(r => r.json());
+                if (srv.booking) chosenName = srv.booking.hospital_name;
+            } catch (_) {}
+        }
+
+        hospList.innerHTML = d.hospitals.map((h, i) => {
+            const distKm  = h.distance_km       ? Number(h.distance_km).toFixed(1)
+                          : h.distance_meters   ? (h.distance_meters/1000).toFixed(1) : '—';
+            const beds    = parseInt(h.beds_available || h.available_beds || 0);
+            const bedsCls = beds >= 8 ? 'beds-ok' : 'beds-low';
+            const chosen  = h.chosen || (chosenName && h.name === chosenName);
+            return `
+            <div class="hospital-row ${chosen ? 'chosen' : ''}" style="animation-delay:${i * 0.07}s">
+                <div class="hosp-left">
+                    <div class="hosp-rank">${i + 1}</div>
+                    <div class="hosp-info">
+                        <div class="hosp-name">${h.name}${chosen ? ' ✓' : ''}</div>
+                        <div class="hosp-detail">${chosen ? '🟢 Reserved' : `📍 ${distKm} km away`}</div>
+                    </div>
+                </div>
+                <div class="hosp-right">
+                    <div class="hosp-dist">${distKm} km</div>
+                    <div class="hosp-beds ${bedsCls}">${beds >= 8 ? beds + ' beds' : beds + ' left'}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+});
+</script>
+
+</body>
+</html>
